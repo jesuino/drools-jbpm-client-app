@@ -19,13 +19,31 @@ by: William Siqueira
       <main.class>com.redhat.gss.bpms.view.App</main.class>
    </properties>
    <dependencies>
-      <!-- Add your dependencies here
-    <dependency>
-      <groupId>{groupId}</groupId>
-      <artifactId>{artifactIT}</artifactId>
-      <version>{version}</version>
-    </dependency>
-   -->
+        <dependency>
+                <groupId>org.kie</groupId>
+                <artifactId>kie-api</artifactId>
+                <version>6.0.1.Final</version>
+        </dependency>   
+        <dependency>
+                <groupId>org.kie</groupId>
+                <artifactId>kie-internal</artifactId>
+                <version>6.0.1.Final</version>
+        </dependency>   
+        <dependency>
+                <groupId>org.kie.remote</groupId>
+                <artifactId>kie-services-client</artifactId>
+                <version>6.0.1.Final</version>
+        </dependency>   
+        <dependency>
+                <groupId>org.kie</groupId>
+                <artifactId>kie-ci</artifactId>
+                <version>6.0.1.Final</version>
+        </dependency>
+        <dependency>
+                <groupId>org.jbpm</groupId>
+                <artifactId>jbpm-audit</artifactId>
+                <version>6.0.1.Final</version>
+        </dependency>
    </dependencies>
    <build>
       <finalName>${jar.final.name}</finalName>
