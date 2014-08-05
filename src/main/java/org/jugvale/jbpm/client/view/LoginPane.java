@@ -53,16 +53,16 @@ public class LoginPane extends TitledPane {
 		Button btnLoginAction = new Button("Go");
 		loginPane.add(new Label("URL"), 0, 0);
 		loginPane.add(txtUrl = new TextField(
-				"http://www.localhost:8080/bpm-console"), 1, 0);
+				"http://localhost:8080/business-central"), 1, 0);
 
 		loginPane.add(new Label("Username"), 0, 1);
-		loginPane.add(txtUsername = new TextField("bpmuser"), 1, 1);
+		loginPane.add(txtUsername = new TextField("jesuino"), 1, 1);
 
 		loginPane.add(new Label("Password"), 0, 2);
 		loginPane.add(txtPassword = new PasswordField(), 1, 2);
 
 		loginPane.add(new Label("Deployment"), 0, 3);
-		loginPane.add(txtDeployment = new TextField("mydeployment"), 1, 3);
+		loginPane.add(txtDeployment = new TextField("org.jugvale.bpm.ola:projeto-ola:1.0"), 1, 3);
 
 		loginPane.add(btnLoginAction, 0, 4, 2, 1);
 		loginPane.add(lblLoginError = new Label(), 0, 5, 2, 1);
@@ -141,5 +141,5 @@ public class LoginPane extends TitledPane {
 	public void setFailure(Consumer<Throwable> failure) {
 		this.failure = failure;
 	}
-
+	
 }

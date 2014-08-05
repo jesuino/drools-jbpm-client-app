@@ -36,6 +36,7 @@ public class JBPMController {
 					loginModel.password.get()).newRuntimeEngine();
 			System.out.println("Kie Session ID: "
 					+ newEngine.getKieSession().getId());
+			newEngine.getKieSession().getEntryPointId();
 			return new JBPMController(newEngine, loginModel);
 		} catch (Exception e) {
 			throw new Error(e);

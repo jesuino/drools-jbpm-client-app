@@ -17,7 +17,7 @@ public class App extends Application {
 	private BooleanProperty session = new SimpleBooleanProperty(false);
 
 	public static void main(String args[]) {
-		launch();
+		launch(args);
 	}
 
 	@Override
@@ -31,8 +31,8 @@ public class App extends Application {
 		sessionBox.visibleProperty().bind(session);
 		loginPane.visibleProperty().bind(session.not());
 		stage.setScene(new Scene(new StackPane(loginPane, sessionBox)));
-		stage.setWidth(800);
-		stage.setHeight(600);
+		stage.setWidth(900);
+		stage.setHeight(700);
 		stage.setTitle("A JavaFX Client for jBPM 6");
 		stage.show();
 	}

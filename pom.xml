@@ -34,17 +34,14 @@ by: William Siqueira
         <dependency>
             <groupId>org.kie</groupId>
             <artifactId>kie-api</artifactId>
-            <version>6.0.1.Final</version>
         </dependency>   
         <dependency>
             <groupId>org.kie</groupId>
             <artifactId>kie-internal</artifactId>
-            <version>6.0.1.Final</version>
         </dependency>   
         <dependency>
             <groupId>org.kie.remote</groupId>
             <artifactId>kie-services-client</artifactId>
-            <version>6.0.1.Final</version>
         </dependency>   
         <dependency>
             <groupId>org.kie</groupId>
@@ -53,8 +50,7 @@ by: William Siqueira
         </dependency>
         <dependency>
             <groupId>org.jbpm</groupId>
-            <artifactId>jbpm-audit</artifactId>
-            <version>6.0.1.Final</version>
+            <artifactId>jbpm-audit</artifactId>            
         </dependency>
     </dependencies>
     <build>
