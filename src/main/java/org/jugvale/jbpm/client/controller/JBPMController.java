@@ -1,9 +1,13 @@
 package org.jugvale.jbpm.client.controller;
 
 import java.net.URL;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
+import org.jbpm.process.audit.ProcessInstanceLog;
 import org.jugvale.jbpm.client.model.LoginModel;
+import org.kie.api.task.model.Status;
 import org.kie.api.task.model.TaskSummary;
 import org.kie.services.client.api.RemoteRestRuntimeFactory;
 import org.kie.services.client.api.command.RemoteRuntimeEngine;
@@ -19,6 +23,7 @@ import org.kie.services.client.api.command.RemoteRuntimeEngine;
 public class JBPMController {
 
 	final String DEFAULT_LANGUAGE = "en-UK";
+	final List<Status> ALL_STATUS = Arrays.asList(Status.values());
 	private RemoteRuntimeEngine engine;
 	private LoginModel loginModel;
 
@@ -47,12 +52,41 @@ public class JBPMController {
 		return allTasks(DEFAULT_LANGUAGE);
 	}
 
+	public List<ProcessInstanceLog> allProccessInstances() {
+		return engine.getAuditLogService().findProcessInstances();
+	}
+
 	public List<TaskSummary> allTasks(String lang) {
-		return engine.getTaskService().getTasksAssignedAsPotentialOwner(
-				loginModel.username.get(), lang);
+		return engine.getTaskService()
+				.getTasksAssignedAsPotentialOwnerByStatus(
+						loginModel.username.get(), ALL_STATUS, lang);
+	}
+
+	public List<TaskSummary> tasksByProcessInstanceId(long id) {
+		return engine.getTaskService().getTasksByStatusByProcessInstanceId(id,
+				ALL_STATUS, DEFAULT_LANGUAGE);
+	}
+
+	public void complete(long id) {
+		HashMap<String, Object> params = new HashMap<>();
+		params.put("nome", "João");
+		engine.getTaskService().complete(id, loginModel.username.get(), params);
+	}
+
+	public void start(long id) {
+		engine.getTaskService().start(id, loginModel.username.get());
+	}
+
+	public void activate(long id) {
+		engine.getTaskService().activate(id, loginModel.username.get());
+	}
+	
+	public void claim(long id) {
+		engine.getTaskService().claim(id, loginModel.username.get());
 	}
 
 	public LoginModel getLoginModel() {
 		return loginModel;
 	}
+
 }

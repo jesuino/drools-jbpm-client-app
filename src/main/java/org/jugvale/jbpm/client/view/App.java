@@ -32,7 +32,7 @@ public class App extends Application {
 		loginPane.visibleProperty().bind(session.not());
 		stage.setScene(new Scene(new StackPane(loginPane, sessionBox)));
 		stage.setWidth(900);
-		stage.setHeight(700);
+		stage.setHeight(600);
 		stage.setTitle("A JavaFX Client for jBPM 6");
 		stage.show();
 	}
