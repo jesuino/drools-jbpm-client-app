@@ -5,23 +5,34 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.geometry.Orientation;
 import javafx.geometry.Side;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.Separator;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
 
 import org.jbpm.process.audit.ProcessInstanceLog;
 import org.jugvale.jbpm.client.controller.JBPMController;
+import org.kie.api.task.model.Status;
 import org.kie.api.task.model.TaskSummary;
 
 /**
@@ -32,7 +43,7 @@ import org.kie.api.task.model.TaskSummary;
  *
  */
 
-// TODO: Finish  tasks functions
+// TODO: Finish tasks functions
 // TODO: Handle errors when dealing with tasks
 // TODO: avoid tasks issues when invoking tasks functions
 // TODO: make the tool allow us to create a process instance
@@ -43,17 +54,17 @@ import org.kie.api.task.model.TaskSummary;
 public class RemoteJBPMClientView extends TabPane {
 
 	private JBPMController controller;
-	private TableView<TaskSummary> tblUserTasks;
 	private TableView<TaskSummary> tblProcessTasks;
+
+	private ObservableList<ProcessInstanceLog> allProcessInstances;
+	private ObservableList<TaskSummary> allTasksUsers;
 	// Holds the current selected process
 	private ObjectProperty<ProcessInstanceLog> selectedProcess = new SimpleObjectProperty<>();
 	// holds the current selected task
 	private ObjectProperty<TaskSummary> selectedTask = new SimpleObjectProperty<>();
 	// the menu for tasks actions
 	ContextMenu taskContextMenu;
-	private Label lblProcessTasks = new Label("");
-
-	private TableView<ProcessInstanceLog> tblProcessesInstances;
+	private StringProperty strProcessInfo;
 
 	/**
 	 * A property to indicate when we are doing heavy tasks
@@ -61,8 +72,15 @@ public class RemoteJBPMClientView extends TabPane {
 	private BooleanProperty loadingTasks = new SimpleBooleanProperty();
 
 	public RemoteJBPMClientView() {
+		initialize();
 		build();
 		settings();
+	}
+
+	private void initialize() {
+		allProcessInstances = FXCollections.observableArrayList();
+		allTasksUsers = FXCollections.observableArrayList();
+		strProcessInfo = new SimpleStringProperty();
 	}
 
 	private void settings() {
@@ -74,21 +92,69 @@ public class RemoteJBPMClientView extends TabPane {
 	private void build() {
 		createTasksContextMenu();
 		Tab processTaskTab = createProcessTasksPane();
-		getTabs().addAll(createProcessesPane(), createUserTasksPane(),
-				processTaskTab);
+		getTabs().addAll(welcomeTab(), createTab(),
+				createProcessesInstancePane(), processTaskTab,
+				createUserTasksPane());
 		// when we select a process, we will change to the process tasks tab and
 		// fill it with the user tasks
 		processTaskTab.disableProperty().bind(selectedProcess.isNull());
 		selectedProcess.addListener((obs, o, n) -> {
 			getSelectionModel().select(processTaskTab);
-			lblProcessTasks.setText("Tasks for process \""
+			strProcessInfo.set("Tasks for process \""
 					+ selectedProcess.get().getProcessId() + "\", instance "
 					+ selectedProcess.get().getProcessInstanceId());
-			loadProcessTask();
+			loadProcessTasks();
 		});
 	}
 
+	private Tab welcomeTab() {
+		// TODO: Move style to CSS
+		// TODO: use constants for texts
+		Tab t = new Tab("Welcome");
+		Label lblTitle = new Label("BPM 6 Client");
+		Label lblSummary = new Label(
+				"This is an application to interact with a BPM  6 Installation. See below what you can do with this app.\n\n "
+						+ "* Create task\n"
+						+ "* Create Process Instance\n"
+						+ "* List all Process Instances \n"
+						+ "* List all Tasks\n"
+						+ "* List a Process Instance Tasks\n"
+						+ "* Manage Tasks");
+		lblSummary.setWrapText(true);
+		lblSummary.setFont(Font.font("Serif", FontPosture.ITALIC, 25));
+		lblTitle.setFont(Font.font("Serif", FontWeight.BOLD, 40));
+		VBox v = new VBox(10, lblTitle, lblSummary);
+		v.setTranslateX(20);
+		v.setTranslateY(20);
+		t.setContent(v);
+		return t;
+	}
+
+	private Tab createTab() {
+		Tab t = new Tab("Create");
+		VBox content = new VBox(10);
+		HBox hbCreateProcessInstance = new HBox(10);
+		HBox hbCreateTask = new HBox(10);
+		Label lblTitle = new Label("Create tasks and process instances");
+		lblTitle.setFont(Font.font("Serif", FontWeight.BOLD, 25));
+
+		hbCreateProcessInstance.getChildren().setAll(
+				new Label("Process name:"), new TextField(),
+				new Button("Create"));
+		hbCreateTask.getChildren().addAll(new Label("New Task name:"),
+				new TextField(), new Button("Create Task"));
+
+		content.getChildren().addAll(lblTitle, new Label("Create Process Instance"),
+				hbCreateProcessInstance, new Separator(Orientation.HORIZONTAL),
+				new Label("Create Task"), hbCreateTask);
+		content.setTranslateX(20);
+		content.setTranslateY(20);
+		t.setContent(content);
+		return t;
+	}
+
 	private void createTasksContextMenu() {
+		// TODO: Continue creating tasks 
 		MenuItem menuStart = new MenuItem("Start");
 		MenuItem menuComplete = new MenuItem("Complete");
 		MenuItem menuActivate = new MenuItem("Activate");
@@ -97,7 +163,8 @@ public class RemoteJBPMClientView extends TabPane {
 		menuComplete.setOnAction(e -> complete());
 		menuActivate.setOnAction(e -> activate());
 		menuClaim.setOnAction(e -> claim());
-		taskContextMenu = new ContextMenu(menuStart, menuComplete, menuActivate, menuClaim);
+		taskContextMenu = new ContextMenu(menuStart, menuComplete,
+				menuActivate, menuClaim);
 		// menus are disabled if the task is null
 		taskContextMenu.getItems().forEach(
 				i -> i.disableProperty().bind(selectedTask.isNull()));
@@ -109,18 +176,21 @@ public class RemoteJBPMClientView extends TabPane {
 	}
 
 	private void loadData() {
-		loadUserTasks();
+		loadAllUserTasks();
 		loadAllProcessInstances();
+		loadProcessTasks();
 	}
 
 	@SuppressWarnings("unchecked")
-	private Tab createProcessesPane() {
-		tblProcessesInstances = new TableView<>();
+	private Tab createProcessesInstancePane() {
+		TableView<ProcessInstanceLog> tblProcessesInstances = new TableView<>();
+		ComboBox<Integer> cmbStatus = new ComboBox<>(
+				FXCollections.observableArrayList(null, 1, 2, 3));
 		tblProcessesInstances.getColumns().addAll(
-				makeProcessColumn("ID", "processId", 80),
-				makeProcessColumn("Instance ID", "processInstanceId", 80),
+				makeProcessColumn("Process ID", "processId", 140),
+				makeProcessColumn("ID", "processInstanceId", 20),
 				makeProcessColumn("Name", "processName", 100),
-				makeProcessColumn("Version", "processVersion", 100),
+				makeProcessColumn("Version", "processVersion", 80),
 				makeProcessColumn("Status", "status", 20),
 				makeProcessColumn("Start Date", "start", 180),
 				makeProcessColumn("End Date", "end", 180),
@@ -138,10 +208,37 @@ public class RemoteJBPMClientView extends TabPane {
 			selectedProcess.set(tblProcessesInstances.getSelectionModel()
 					.getSelectedItem());
 		});
+		cmbStatus
+				.getSelectionModel()
+				.selectedItemProperty()
+				.addListener(
+						(obs, o, n) -> {
+							tblProcessesInstances.getItems().clear();
+							if (n == null)
+								tblProcessesInstances.getItems().setAll(
+										allProcessInstances);
+							else
+								allProcessInstances
+										.stream()
+										.filter(e -> e.getStatus() == n)
+										.forEach(
+												tblProcessesInstances
+														.getItems()::add);
+						});
 		HBox bottomBar = new HBox(20,
-				refreshButton(this::loadAllProcessInstances), btnSelectProcess);
-
+				refreshButton(this::loadAllProcessInstances), btnSelectProcess,
+				new Label("Status"), cmbStatus);
 		t.setContent(new VBox(tblProcessesInstances, bottomBar));
+
+		// HAHA old times without Lambda!
+		allProcessInstances
+				.addListener(new ListChangeListener<ProcessInstanceLog>() {
+					@Override
+					public void onChanged(
+							javafx.collections.ListChangeListener.Change<? extends ProcessInstanceLog> c) {
+						tblProcessesInstances.getItems().setAll(c.getList());
+					}
+				});
 		return t;
 	}
 
@@ -150,25 +247,26 @@ public class RemoteJBPMClientView extends TabPane {
 		tblProcessTasks.setContextMenu(taskContextMenu);
 		tblProcessTasks.getColumns().addAll(createTasksColumns());
 		Tab t = new Tab("Process Tasks");
-		// everytime we selected a task
 		tblProcessTasks
 				.getSelectionModel()
 				.selectedItemProperty()
 				.addListener(
 						(obs, o, n) -> selectedTask.set(tblProcessTasks
 								.getSelectionModel().getSelectedItem()));
-
+		Label lblProcessTasks = new Label("");
+		lblProcessTasks.textProperty().bind(strProcessInfo);
 		t.setContent(new VBox(10, lblProcessTasks, tblProcessTasks,
-				refreshButton(this::loadProcessTask)));
+				refreshButton(this::loadProcessTasks)));
 		return t;
 	}
 
 	private Tab createUserTasksPane() {
-		tblUserTasks = new TableView<>();
+		TableView<TaskSummary> tblUserTasks = new TableView<>();
+		ComboBox<Status> cmbStatus = new ComboBox<>();
+		cmbStatus.getItems().add(null);
+		cmbStatus.getItems().addAll(Status.values());
 		tblUserTasks.setContextMenu(taskContextMenu);
 		tblUserTasks.getColumns().addAll(createTasksColumns());
-		Tab t = new Tab("User Tasks");
-		t.setContent(new VBox(tblUserTasks, refreshButton(this::loadUserTasks)));
 		// everytime we selected a task
 		tblUserTasks
 				.getSelectionModel()
@@ -177,6 +275,33 @@ public class RemoteJBPMClientView extends TabPane {
 						(obs, o, n) -> selectedTask.set(tblUserTasks
 								.getSelectionModel().getSelectedItem()));
 
+		allTasksUsers.addListener(new ListChangeListener<TaskSummary>() {
+			@Override
+			public void onChanged(
+					javafx.collections.ListChangeListener.Change<? extends TaskSummary> c) {
+				tblUserTasks.getItems().setAll(c.getList());
+			}
+		});
+		cmbStatus
+				.getSelectionModel()
+				.selectedItemProperty()
+				.addListener(
+						(obs, o, n) -> {
+							tblUserTasks.getItems().clear();
+							if (n == null)
+								tblProcessTasks.getItems()
+										.setAll(allTasksUsers);
+							else
+								allTasksUsers
+										.stream()
+										.filter(s -> n.name().equals(
+												s.getStatus().name()))
+										.forEach(tblUserTasks.getItems()::add);
+						});
+		Tab t = new Tab("User Tasks");
+		HBox tools = new HBox(10, refreshButton(this::loadAllUserTasks),
+				new Label("Status"), cmbStatus);
+		t.setContent(new VBox(tblUserTasks, tools));
 		return t;
 	}
 
@@ -210,18 +335,21 @@ public class RemoteJBPMClientView extends TabPane {
 	}
 
 	private void loadAllProcessInstances() {
-		runLater(() -> tblProcessesInstances.getItems().setAll(
-				controller.allProccessInstances()));
+		runLater(() -> {
+			allProcessInstances.setAll(FXCollections
+					.observableArrayList(controller.allProccessInstances()));
+		});
 	}
 
-	private void loadProcessTask() {
+	private void loadProcessTasks() {
 		long id = selectedProcess.get().getProcessInstanceId();
 		runLater(() -> tblProcessTasks.getItems().setAll(
 				controller.tasksByProcessInstanceId(id)));
 	}
 
-	private void loadUserTasks() {
-		runLater(() -> tblUserTasks.getItems().setAll(controller.allTasks()));
+	private void loadAllUserTasks() {
+		runLater(() -> allTasksUsers.setAll(FXCollections
+				.observableArrayList(controller.allTasks())));
 	}
 
 	private void start() {

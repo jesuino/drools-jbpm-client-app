@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import org.jbpm.process.audit.AuditLogService;
 import org.jbpm.process.audit.ProcessInstanceLog;
 import org.jugvale.jbpm.client.model.LoginModel;
 import org.kie.api.task.model.Status;
@@ -23,7 +24,8 @@ import org.kie.services.client.api.command.RemoteRuntimeEngine;
 public class JBPMController {
 
 	final String DEFAULT_LANGUAGE = "en-UK";
-	final List<Status> ALL_STATUS = Arrays.asList(Status.values());
+	public static final List<Status> ALL_TASK_STATUS = Arrays.asList(Status
+			.values());
 	private RemoteRuntimeEngine engine;
 	private LoginModel loginModel;
 
@@ -52,19 +54,30 @@ public class JBPMController {
 		return allTasks(DEFAULT_LANGUAGE);
 	}
 
+	public boolean processExist(String processName) {
+		AuditLogService s = engine.getAuditLogService();
+		try {
+			return s.findProcessInstances(processName) != null;			
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}	
+	}
+
 	public List<ProcessInstanceLog> allProccessInstances() {
-		return engine.getAuditLogService().findProcessInstances();
+		AuditLogService s = engine.getAuditLogService();
+		return s == null ? null : s.findProcessInstances();
 	}
 
 	public List<TaskSummary> allTasks(String lang) {
 		return engine.getTaskService()
 				.getTasksAssignedAsPotentialOwnerByStatus(
-						loginModel.username.get(), ALL_STATUS, lang);
+						loginModel.username.get(), ALL_TASK_STATUS, lang);
 	}
 
 	public List<TaskSummary> tasksByProcessInstanceId(long id) {
 		return engine.getTaskService().getTasksByStatusByProcessInstanceId(id,
-				ALL_STATUS, DEFAULT_LANGUAGE);
+				ALL_TASK_STATUS, DEFAULT_LANGUAGE);
 	}
 
 	public void complete(long id) {
@@ -80,7 +93,7 @@ public class JBPMController {
 	public void activate(long id) {
 		engine.getTaskService().activate(id, loginModel.username.get());
 	}
-	
+
 	public void claim(long id) {
 		engine.getTaskService().claim(id, loginModel.username.get());
 	}
@@ -88,5 +101,4 @@ public class JBPMController {
 	public LoginModel getLoginModel() {
 		return loginModel;
 	}
-
 }
