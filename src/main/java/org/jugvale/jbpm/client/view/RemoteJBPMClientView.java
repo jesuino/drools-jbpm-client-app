@@ -47,10 +47,9 @@ import org.kie.api.task.model.TaskSummary;
  *
  */
 
-// TODO: Finish tasks functions
-// TODO: Handle errors when dealing with tasks
 // TODO: avoid tasks issues when invoking tasks functions
-// TODO: make the tool allow us to create a process instance
+// TODO: parameters when doing certains op with tasks
+// TODO: parameters when creating process
 // TODO: explore more methods of the API
 // TODO: Check why the tasks are not receiving parameters
 // TODO: Filter the table
@@ -70,6 +69,7 @@ public class RemoteJBPMClientView extends TabPane {
 	ContextMenu taskContextMenu;
 	private StringProperty strProcessInfo;
 	private StringProperty strTaskOperationResult;
+	private StringProperty strProcessCreationResult;
 
 	/**
 	 * A property to indicate when we are doing heavy tasks
@@ -89,6 +89,7 @@ public class RemoteJBPMClientView extends TabPane {
 		strTaskOperationResult = new SimpleStringProperty();
 		selectedTask = new SimpleObjectProperty<>();
 		selectedProcess = new SimpleObjectProperty<>();
+		strProcessCreationResult = new SimpleStringProperty();
 	}
 
 	private void settings() {
@@ -138,6 +139,7 @@ public class RemoteJBPMClientView extends TabPane {
 		return t;
 	}
 
+	// TODO: Add support to process parameters
 	private Tab createTab() {
 		Tab t = new Tab("Create");
 		VBox content = new VBox(10);
@@ -145,12 +147,16 @@ public class RemoteJBPMClientView extends TabPane {
 		HBox hbCreateTask = new HBox(10);
 		Label lblTitle = new Label("Create tasks and process instances");
 		lblTitle.setFont(Font.font("Serif", FontWeight.BOLD, 25));
+		Label lblErrorOnCreationProcess = new Label("");
+		lblErrorOnCreationProcess.textProperty().bind(strProcessCreationResult);
+		Button btnCreate = new Button("Create");
+		TextField txtProcessName = new TextField();
 
 		hbCreateProcessInstance.getChildren().setAll(
-				new Label("Process name:"), new TextField(),
-				new Button("Create"));
+				new Label("Process name:"), txtProcessName,
+				btnCreate);
 		hbCreateTask.getChildren().addAll(new Label("New Task name:"),
-				new TextField(), new Button("Create Task"));
+				new TextField(), new Button("Create"));
 
 		content.getChildren().addAll(lblTitle,
 				new Label("Create Process Instance"), hbCreateProcessInstance,
@@ -159,18 +165,19 @@ public class RemoteJBPMClientView extends TabPane {
 		content.setTranslateX(20);
 		content.setTranslateY(20);
 		t.setContent(content);
+		btnCreate.setOnAction(e -> {
+			createProcessInstance(txtProcessName.getText());
+		});
 		return t;
 	}
 
 	private void createTasksContextMenu() {
 		taskContextMenu = new ContextMenu();
-		Stream.of(TaskOperation.values())
-				.map(TaskOperation::toString)
-				.map(MenuItem::new)
-				.peek(taskContextMenu.getItems()::add)
+		Stream.of(TaskOperation.values()).map(TaskOperation::toString)
+				.map(MenuItem::new).peek(taskContextMenu.getItems()::add)
 				.peek(m -> m.setOnAction(this::taskMenuAction))
 				.forEach(i -> i.disableProperty().bind(selectedTask.isNull()));
-			
+
 		;
 	}
 
@@ -360,6 +367,16 @@ public class RemoteJBPMClientView extends TabPane {
 		runLater(() -> {
 			allProcessInstances.setAll(FXCollections
 					.observableArrayList(controller.allProccessInstances()));
+		});
+	}
+
+	private void createProcessInstance(String name) {
+		runLater(() -> {
+			controller.createProcessInstance(name, null, s -> {
+				strProcessCreationResult.set(s);
+				loadAllProcessInstances();
+			}, strProcessCreationResult::set);
+
 		});
 	}
 

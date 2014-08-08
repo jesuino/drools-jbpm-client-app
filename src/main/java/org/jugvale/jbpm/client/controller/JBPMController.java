@@ -120,15 +120,39 @@ public class JBPMController {
 				break;
 			}
 			onSuccess.accept(StringFormatter.format(
-					"Success executing %s on task %d.\n", operation, taskId)
-					.get());
+					"Success executing \"%s\" on task \"%d\".\n", operation,
+					taskId).get());
+		} catch (Exception e) {
+			e.printStackTrace();
+			onFail.accept(StringFormatter
+					.format("Fail when executing \"%s\" on task \"%d\" with message %s: \n",
+							operation, taskId, e.getMessage()).get());
+		}
+	}
+
+	// TODO NOT SUPPORTED! Change to another method.
+	public void createProcessInstance(String processName,
+			HashMap<String, Object> params, Consumer<String> onSuccess,
+			Consumer<String> onFail) {
+		if (onFail == null)
+			onFail = System.out::println;
+		if (onSuccess == null)
+			onSuccess = System.out::println;
+		if (processName == null || processName.trim().isEmpty()) {
+			onFail.accept("Please provide a valid process name");
+			return;
+		}
+		try {
+			engine.getKieSession().createProcessInstance(processName, params);
+			onSuccess.accept(StringFormatter.format(
+					"Instance of process \"%s\" created with success",
+					processName).get());
 		} catch (Exception e) {
 			e.printStackTrace();
 			onFail.accept(StringFormatter.format(
-					"Fail when executing %s on task %d with message %s \n",
-					operation, taskId, e.getMessage()).get());
+					"Fail when creating an instance of process \"%s\": %s",
+					processName, e.getMessage()).get());
 		}
-
 	}
 
 	public LoginModel getLoginModel() {
