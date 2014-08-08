@@ -1,5 +1,7 @@
 package org.jugvale.jbpm.client.view;
 
+import java.util.stream.Stream;
+
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -10,6 +12,7 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.geometry.Orientation;
 import javafx.geometry.Side;
 import javafx.scene.control.Button;
@@ -32,6 +35,7 @@ import javafx.scene.text.FontWeight;
 
 import org.jbpm.process.audit.ProcessInstanceLog;
 import org.jugvale.jbpm.client.controller.JBPMController;
+import org.jugvale.jbpm.client.controller.TaskOperation;
 import org.kie.api.task.model.Status;
 import org.kie.api.task.model.TaskSummary;
 
@@ -59,12 +63,13 @@ public class RemoteJBPMClientView extends TabPane {
 	private ObservableList<ProcessInstanceLog> allProcessInstances;
 	private ObservableList<TaskSummary> allTasksUsers;
 	// Holds the current selected process
-	private ObjectProperty<ProcessInstanceLog> selectedProcess = new SimpleObjectProperty<>();
+	private ObjectProperty<ProcessInstanceLog> selectedProcess;
 	// holds the current selected task
-	private ObjectProperty<TaskSummary> selectedTask = new SimpleObjectProperty<>();
+	private ObjectProperty<TaskSummary> selectedTask;
 	// the menu for tasks actions
 	ContextMenu taskContextMenu;
 	private StringProperty strProcessInfo;
+	private StringProperty strTaskOperationResult;
 
 	/**
 	 * A property to indicate when we are doing heavy tasks
@@ -81,6 +86,9 @@ public class RemoteJBPMClientView extends TabPane {
 		allProcessInstances = FXCollections.observableArrayList();
 		allTasksUsers = FXCollections.observableArrayList();
 		strProcessInfo = new SimpleStringProperty();
+		strTaskOperationResult = new SimpleStringProperty();
+		selectedTask = new SimpleObjectProperty<>();
+		selectedProcess = new SimpleObjectProperty<>();
 	}
 
 	private void settings() {
@@ -144,8 +152,9 @@ public class RemoteJBPMClientView extends TabPane {
 		hbCreateTask.getChildren().addAll(new Label("New Task name:"),
 				new TextField(), new Button("Create Task"));
 
-		content.getChildren().addAll(lblTitle, new Label("Create Process Instance"),
-				hbCreateProcessInstance, new Separator(Orientation.HORIZONTAL),
+		content.getChildren().addAll(lblTitle,
+				new Label("Create Process Instance"), hbCreateProcessInstance,
+				new Separator(Orientation.HORIZONTAL),
 				new Label("Create Task"), hbCreateTask);
 		content.setTranslateX(20);
 		content.setTranslateY(20);
@@ -154,25 +163,34 @@ public class RemoteJBPMClientView extends TabPane {
 	}
 
 	private void createTasksContextMenu() {
-		// TODO: Continue creating tasks 
-		MenuItem menuStart = new MenuItem("Start");
-		MenuItem menuComplete = new MenuItem("Complete");
-		MenuItem menuActivate = new MenuItem("Activate");
-		MenuItem menuClaim = new MenuItem("Claim");
-		menuStart.setOnAction(e -> start());
-		menuComplete.setOnAction(e -> complete());
-		menuActivate.setOnAction(e -> activate());
-		menuClaim.setOnAction(e -> claim());
-		taskContextMenu = new ContextMenu(menuStart, menuComplete,
-				menuActivate, menuClaim);
-		// menus are disabled if the task is null
-		taskContextMenu.getItems().forEach(
-				i -> i.disableProperty().bind(selectedTask.isNull()));
+		taskContextMenu = new ContextMenu();
+		Stream.of(TaskOperation.values())
+				.map(TaskOperation::toString)
+				.map(MenuItem::new)
+				.peek(taskContextMenu.getItems()::add)
+				.peek(m -> m.setOnAction(this::taskMenuAction))
+				.forEach(i -> i.disableProperty().bind(selectedTask.isNull()));
+			
+		;
 	}
 
 	public void setController(JBPMController controller) {
 		this.controller = controller;
 		loadData();
+	}
+
+	private void taskMenuAction(ActionEvent e) {
+		if (selectedTask.get() == null)
+			return;
+		MenuItem m = (MenuItem) e.getTarget();
+		TaskOperation o = TaskOperation.get(m.getText());
+		runLater(() -> {
+			controller.doTaskOperation(selectedTask.get().getId(), o, null,
+					s -> {
+						strTaskOperationResult.set(s);
+						loadData();
+					}, strTaskOperationResult::set);
+		});
 	}
 
 	private void loadData() {
@@ -254,9 +272,11 @@ public class RemoteJBPMClientView extends TabPane {
 						(obs, o, n) -> selectedTask.set(tblProcessTasks
 								.getSelectionModel().getSelectedItem()));
 		Label lblProcessTasks = new Label("");
+		Label lblTaskMsg = new Label("");
+		lblTaskMsg.textProperty().bind(strTaskOperationResult);
 		lblProcessTasks.textProperty().bind(strProcessInfo);
 		t.setContent(new VBox(10, lblProcessTasks, tblProcessTasks,
-				refreshButton(this::loadProcessTasks)));
+				refreshButton(this::loadProcessTasks), lblTaskMsg));
 		return t;
 	}
 
@@ -298,10 +318,12 @@ public class RemoteJBPMClientView extends TabPane {
 												s.getStatus().name()))
 										.forEach(tblUserTasks.getItems()::add);
 						});
+		Label lblTaskError = new Label("");
+		lblTaskError.textProperty().bind(strTaskOperationResult);
 		Tab t = new Tab("User Tasks");
 		HBox tools = new HBox(10, refreshButton(this::loadAllUserTasks),
 				new Label("Status"), cmbStatus);
-		t.setContent(new VBox(tblUserTasks, tools));
+		t.setContent(new VBox(tblUserTasks, tools, lblTaskError));
 		return t;
 	}
 
@@ -342,6 +364,8 @@ public class RemoteJBPMClientView extends TabPane {
 	}
 
 	private void loadProcessTasks() {
+		if (selectedProcess.get() == null)
+			return;
 		long id = selectedProcess.get().getProcessInstanceId();
 		runLater(() -> tblProcessTasks.getItems().setAll(
 				controller.tasksByProcessInstanceId(id)));
@@ -350,26 +374,6 @@ public class RemoteJBPMClientView extends TabPane {
 	private void loadAllUserTasks() {
 		runLater(() -> allTasksUsers.setAll(FXCollections
 				.observableArrayList(controller.allTasks())));
-	}
-
-	private void start() {
-		runLater(() -> controller.start(selectedTask.get().getId()));
-		loadData();
-	}
-
-	private void complete() {
-		runLater(() -> controller.complete(selectedTask.get().getId()));
-		loadData();
-	}
-
-	private void activate() {
-		runLater(() -> controller.activate(selectedTask.get().getId()));
-		loadData();
-	}
-
-	private void claim() {
-		runLater(() -> controller.claim(selectedTask.get().getId()));
-		loadData();
 	}
 
 	private void runLater(Runnable r) {

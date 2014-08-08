@@ -4,14 +4,18 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.jbpm.process.audit.AuditLogService;
 import org.jbpm.process.audit.ProcessInstanceLog;
 import org.jugvale.jbpm.client.model.LoginModel;
+import org.kie.api.task.TaskService;
 import org.kie.api.task.model.Status;
 import org.kie.api.task.model.TaskSummary;
 import org.kie.services.client.api.RemoteRestRuntimeFactory;
 import org.kie.services.client.api.command.RemoteRuntimeEngine;
+
+import com.sun.javafx.binding.StringFormatter;
 
 /**
  * 
@@ -57,11 +61,11 @@ public class JBPMController {
 	public boolean processExist(String processName) {
 		AuditLogService s = engine.getAuditLogService();
 		try {
-			return s.findProcessInstances(processName) != null;			
+			return s.findProcessInstances(processName) != null;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return false;
-		}	
+		}
 	}
 
 	public List<ProcessInstanceLog> allProccessInstances() {
@@ -80,22 +84,51 @@ public class JBPMController {
 				ALL_TASK_STATUS, DEFAULT_LANGUAGE);
 	}
 
-	public void complete(long id) {
-		HashMap<String, Object> params = new HashMap<>();
-		params.put("nome", "João");
-		engine.getTaskService().complete(id, loginModel.username.get(), params);
-	}
+	public void doTaskOperation(long taskId, TaskOperation operation,
+			HashMap<String, Object> params, Consumer<String> onSuccess,
+			Consumer<String> onFail) {
+		TaskService service = engine.getTaskService();
+		String user = loginModel.username.get();
+		if (onFail == null)
+			onFail = System.out::println;
 
-	public void start(long id) {
-		engine.getTaskService().start(id, loginModel.username.get());
-	}
+		if (onSuccess == null)
+			onSuccess = System.out::println;
 
-	public void activate(long id) {
-		engine.getTaskService().activate(id, loginModel.username.get());
-	}
+		try {
+			switch (operation) {
+			case ACTIVATE:
+				service.activate(taskId, user);
+				break;
+			case CLAIM:
+				service.claim(taskId, user);
+				break;
+			case COMPLETE:
+				service.complete(taskId, user, params);
+				break;
+			case EXIT:
+				service.exit(taskId, user);
+				break;
+			case FAIL:
+				service.fail(taskId, user, params);
+				break;
+			case START:
+				service.start(taskId, user);
+				break;
+			default:
+				onFail.accept("Task Operation not found");
+				break;
+			}
+			onSuccess.accept(StringFormatter.format(
+					"Success executing %s on task %d.\n", operation, taskId)
+					.get());
+		} catch (Exception e) {
+			e.printStackTrace();
+			onFail.accept(StringFormatter.format(
+					"Fail when executing %s on task %d with message %s \n",
+					operation, taskId, e.getMessage()).get());
+		}
 
-	public void claim(long id) {
-		engine.getTaskService().claim(id, loginModel.username.get());
 	}
 
 	public LoginModel getLoginModel() {

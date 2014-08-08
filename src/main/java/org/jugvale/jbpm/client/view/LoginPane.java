@@ -22,6 +22,9 @@ import org.jugvale.jbpm.client.model.LoginModel;
 
 public class LoginPane extends TitledPane {
 
+	private static final String DEFAULT_USER = "bpm-admin";
+	private static final String DEFAULT_DEPLOYMENT = "org.jugvale:ola:1.0";
+	private static final String DEFAULT_URL = "http://testbpm-wsiqueir.rhcloud.com/business-central";
 	private TextField txtDeployment;
 	private TextField txtUrl;
 	private TextField txtUsername;
@@ -53,16 +56,16 @@ public class LoginPane extends TitledPane {
 		Button btnLoginAction = new Button("Go");
 		loginPane.add(new Label("URL"), 0, 0);
 		loginPane.add(txtUrl = new TextField(
-				"http://localhost:8080/business-central"), 1, 0);
+				DEFAULT_URL), 1, 0);
 
 		loginPane.add(new Label("Username"), 0, 1);
-		loginPane.add(txtUsername = new TextField("jesuino"), 1, 1);
+		loginPane.add(txtUsername = new TextField(DEFAULT_USER), 1, 1);
 
 		loginPane.add(new Label("Password"), 0, 2);
 		loginPane.add(txtPassword = new PasswordField(), 1, 2);
 
 		loginPane.add(new Label("Deployment"), 0, 3);
-		loginPane.add(txtDeployment = new TextField("org.jugvale.bpm.ola:projeto-ola:1.0"), 1, 3);
+		loginPane.add(txtDeployment = new TextField(DEFAULT_DEPLOYMENT), 1, 3);
 
 		loginPane.add(btnLoginAction, 0, 4, 2, 1);
 		loginPane.add(lblLoginError = new Label(), 0, 5, 2, 1);
