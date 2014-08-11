@@ -3,9 +3,7 @@ package org.jugvale.jbpm.client.view;
 import java.util.stream.Stream;
 
 import javafx.application.Platform;
-import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -69,12 +67,7 @@ public class RemoteJBPMClientView extends TabPane {
 	ContextMenu taskContextMenu;
 	private StringProperty strProcessInfo;
 	private StringProperty strTaskOperationResult;
-	private StringProperty strProcessCreationResult;
-
-	/**
-	 * A property to indicate when we are doing heavy tasks
-	 */
-	private BooleanProperty loadingTasks = new SimpleBooleanProperty();
+	private StringProperty strProcessCreationResult;	
 
 	public RemoteJBPMClientView() {
 		initialize();
@@ -395,17 +388,12 @@ public class RemoteJBPMClientView extends TabPane {
 
 	private void runLater(Runnable r) {
 		Platform.runLater(() -> {
-			loadingTasks.set(true);
 			r.run();
-			loadingTasks.set(false);
 		});
 	}
 
 	private Button refreshButton(Runnable r) {
-		Button btnRefresh = new Button("Refresh");
-		loadingTasks.addListener((obs, o, n) -> {
-			btnRefresh.setText(n ? "Refresing..." : "Refresh");
-		});
+		Button btnRefresh = new Button("Refresh");		
 		btnRefresh.setOnAction(e -> {
 			r.run();
 		});
