@@ -1,0 +1,7 @@
+.root {
+	-fx-base: gray;	
+}
+.tab-title {
+	-fx-font-size: 22px;
+	-fx-font-weight: bold;
+}

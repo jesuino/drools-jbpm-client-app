@@ -30,9 +30,11 @@ public class App extends Application {
 		sessionBox.getChildren().addAll(jbpmClientView, btnEndSession);
 		sessionBox.visibleProperty().bind(session);
 		loginPane.visibleProperty().bind(session.not());
-		stage.setScene(new Scene(new StackPane(loginPane, sessionBox)));
-		stage.setWidth(900);
-		stage.setHeight(600);
+		Scene scene = new Scene(new StackPane(loginPane, sessionBox));
+		scene.getStylesheets().add("./app.css");
+		stage.setScene(scene);
+		stage.setWidth(1100);
+		stage.setHeight(650);
 		stage.setTitle("A JavaFX Client for jBPM 6");
 		stage.show();
 	}
