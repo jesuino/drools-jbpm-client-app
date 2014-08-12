@@ -50,7 +50,6 @@ import org.kie.api.task.model.TaskSummary;
 // TODO: parameters when creating process
 // TODO: explore more methods of the API
 // TODO: Check why the tasks are not receiving parameters
-// TODO: Filter the table
 
 public class RemoteJBPMClientView extends TabPane {
 
@@ -67,7 +66,7 @@ public class RemoteJBPMClientView extends TabPane {
 	ContextMenu taskContextMenu;
 	private StringProperty strProcessInfo;
 	private StringProperty strTaskOperationResult;
-	private StringProperty strProcessCreationResult;	
+	private StringProperty strProcessCreationResult;
 
 	public RemoteJBPMClientView() {
 		initialize();
@@ -146,8 +145,7 @@ public class RemoteJBPMClientView extends TabPane {
 		TextField txtProcessName = new TextField();
 
 		hbCreateProcessInstance.getChildren().setAll(
-				new Label("Process name:"), txtProcessName,
-				btnCreate);
+				new Label("Process name:"), txtProcessName, btnCreate);
 		hbCreateTask.getChildren().addAll(new Label("New Task name:"),
 				new TextField(), new Button("Create"));
 
@@ -170,8 +168,6 @@ public class RemoteJBPMClientView extends TabPane {
 				.map(MenuItem::new).peek(taskContextMenu.getItems()::add)
 				.peek(m -> m.setOnAction(this::taskMenuAction))
 				.forEach(i -> i.disableProperty().bind(selectedTask.isNull()));
-
-		;
 	}
 
 	public void setController(JBPMController controller) {
@@ -302,6 +298,7 @@ public class RemoteJBPMClientView extends TabPane {
 				tblUserTasks.getItems().setAll(c.getList());
 			}
 		});
+
 		cmbStatus
 				.getSelectionModel()
 				.selectedItemProperty()
@@ -309,7 +306,7 @@ public class RemoteJBPMClientView extends TabPane {
 						(obs, o, n) -> {
 							tblUserTasks.getItems().clear();
 							if (n == null)
-								tblProcessTasks.getItems()
+								tblUserTasks.getItems()
 										.setAll(allTasksUsers);
 							else
 								allTasksUsers
@@ -393,7 +390,7 @@ public class RemoteJBPMClientView extends TabPane {
 	}
 
 	private Button refreshButton(Runnable r) {
-		Button btnRefresh = new Button("Refresh");		
+		Button btnRefresh = new Button("Refresh");
 		btnRefresh.setOnAction(e -> {
 			r.run();
 		});
