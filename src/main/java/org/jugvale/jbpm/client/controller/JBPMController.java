@@ -58,16 +58,6 @@ public class JBPMController {
 		return allTasks(DEFAULT_LANGUAGE);
 	}
 
-	public boolean processExist(String processName) {
-		AuditLogService s = engine.getAuditLogService();
-		try {
-			return s.findProcessInstances(processName) != null;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
-		}
-	}
-
 	public List<ProcessInstanceLog> allProccessInstances() {
 		AuditLogService s = engine.getAuditLogService();
 		return s == null ? null : s.findProcessInstances();
