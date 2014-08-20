@@ -14,7 +14,7 @@ import org.jugvale.jbpm.client.controller.JBPMController;
 public class App extends Application {
 
 	private RemoteJBPMClientView jbpmClientView;
-	private BooleanProperty session = new SimpleBooleanProperty(false);
+	private final BooleanProperty session = new SimpleBooleanProperty(false);
 
 	public static void main(String args[]) {
 		launch(args);
@@ -34,7 +34,7 @@ public class App extends Application {
 		scene.getStylesheets().add("./app.css");
 		stage.setScene(scene);
 		stage.setWidth(1100);
-		stage.setHeight(650);
+		stage.setHeight(680);
 		stage.setTitle("A JavaFX Client for jBPM 6");
 		stage.show();
 	}
