@@ -85,12 +85,11 @@ public class RemoteJBPMClientView extends TabPane {
         selectedProcess = new SimpleObjectProperty<>();
         // when we change the selected Process, we must change the tasks 
         selectedProcess.addListener((chg, o, n) -> loadProcessTasks(n));
-
     }
 
     private void settings() {
         setSide(Side.LEFT);
-        setMinHeight(600);        
+        setMinHeight(600);
         getTabs().forEach(t -> t.setClosable(false));
     }
 
@@ -192,14 +191,11 @@ public class RemoteJBPMClientView extends TabPane {
         tblProcessesInstances.getColumns().addAll(processColumns());
         tblProcessesInstances.setItems(tblData);
         Tab t = new Tab("Processes Instances");
-        cmbStatus
-                .getSelectionModel()
-                .selectedItemProperty()
-                .addListener(
-                        (obs, o, n) -> {
-                            tblData.setPredicate(p -> n == null ? true : p
-                                    .getStatus() == n);
-                        });
+        cmbStatus.getSelectionModel().selectedItemProperty().addListener(
+                (obs, o, n) -> {
+                    tblData.setPredicate(p -> n == null ? true : p
+                            .getStatus() == n);
+                });
         HBox bottomBar = new HBox(20,
                 refreshButton(this::loadAllProcessInstances), new Label(
                         "Status"), cmbStatus);
